@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.accp.email.persistence.EmailMapper">	
+	<resultMap type="com.accp.email.model.Email" id="baseResultMap">
+		<id column="id" property="id" />
+		<result column="from_user" property="fromUser"/>
+		<result column="to_user" property="toUser" />
+		<result column="subject" property="subject"/>
+		<result column="content" property="content"/>
+		<result column="attach" property="attach"/>
+		<result column="sent_date" property="sentDate"/>
+		<result column="deleted" property="deleted"/>
+		<result column="delBySender" property="delBySender"/>
+		<result column="isread" property="isread"/>
+	</resultMap>
+	
+	<sql id="baseSql">
+		id,from_user,to_user,subject,content,attach,sent_date,deleted,delBySender,isread
+	</sql>
+		
+	<insert id="insert" parameterType="com.accp.email.model.Email" useGeneratedKeys="true" keyProperty="id">
+		insert into
+		email(from_user,to_user,subject,content,attach,deleted,delBySender,isread)values(#{fromUser},#{toUser},#{subject},#{content},#{attach},#{deleted},#{delBySender},#{isread})
+	</insert>
+	<select id="selectById" parameterType="com.accp.email.model.Email" resultMap="baseResultMap">
+		select
+		<include refid="baseSql" />
+		from email where id=#{id}
+	</select>
+	
+	<select id="selectByCondition" parameterType="com.accp.email.model.Email" resultMap="baseResultMap">
+		select
+		<include refid="baseSql" />
+		from email
+		where 1=1
+		<if test="fromUser !=null and fromUser !=''">
+			and from_user=#{fromUser}
+		</if>
+		<if test="toUser !=null and toUser !=''">
+			and to_user=#{toUser}
+		</if>
+	</select>
+	
+	<update id="updateEmail" parameterType="java.util.Map">
+	    update email
+	    <set>
+	        <if test="isread != null and isread !=''"> 
+	        	 isread=#{isread}
+	    	</if>
+	    	<if test="delBySender != null and isread !=''"> 
+	        	 delBySender=#{delBySender}
+	    	</if>
+	    </set>
+	    where id=#{id}
+	</update>
+	
+	<update id="updateDeleteFlag" >
+	    update email set deleted=#{deleted} where id=#{id}
+	</update>
+	
+	<delete id="delete" parameterType="java.lang.Integer">
+		delete from email where
+		id=#{id}
+	</delete>
+	
+	<delete id="deleteBatch" parameterType="java.util.List">
+		delete email where
+		id in
+		<foreach open="(" close=")" separator="," item="id" collection="ids">
+			#{id}
+		</foreach>
+	</delete>
+	<select id="getEmailSum" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(*) from email where 1=1
+		<if test="deleted !=null and deleted !='' or deleted==0">
+			and deleted=#{deleted}
+		</if>
+		<if test="delBySender !=null and delBySender !='' or delBySender==0">
+			and delBySender=#{delBySender}
+		</if>
+		<if test="fromUser !=null and fromUser !=''">
+			and from_user=#{fromUser}
+		</if>
+		<if test="toUser !=null and toUser !=''">
+			and to_user=#{toUser}
+		</if>
+	</select>
+	
+	<select id="getEmailList" parameterType="java.util.Map" resultMap="baseResultMap" >
+		SELECT 
+		<include refid="baseSql" />
+		FROM email where 1=1		
+		<if test="delBySender !=null and delBySender !='' or delBySender==0">
+			and delBySender=#{delBySender}
+		</if>
+		<if test="deleted!=null and deleted!='' or deleted==0">
+			and deleted=#{deleted}
+		</if>
+		<if test="fromUser !=null and fromUser !=''">
+			and from_user=#{fromUser}
+		</if>
+		<if test="toUser !=null and toUser !=''">
+			and to_user=#{toUser}
+		</if>
+		ORDER BY id DESC LIMIT #{offset},#{pageSize};
+	</select>
+</mapper>
